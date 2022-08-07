@@ -9,7 +9,7 @@
   - [Supported languages](#supported-languages)
   - [List of functionalities](#list-of-functionalities)
   - [How to implement](#how-to-implement)
-  - [Download the solution files](#download-the-solution-files)
+  - [Download the solution](#download-the-solution)
 
 ## Summary
 
@@ -91,6 +91,8 @@ With the included [azuredeploy PowerShell script](https://github.com/cupo365/aad
 
 The script contains error handling.
 
-## Download the solution files
+## Download the solution
 
-**[<img src="https://external-content.duckduckgo.com/iu/?u=https%3A%2F%2Fwww.iconsdb.com%2Ficons%2Fpreview%2Froyal-blue%2Fdata-transfer-download-xxl.png&f=1&nofb=1" alt="Download the solution files here!" style="width:15px;margin-right:10px;"/>__Download the solution files here!__](https://github.com/cupo365/aad-app-registration-credential-checker/releases/tag/v2.0.0)**
+<img src="resources/aad-app-reg-credential-checker-icon-big.svg" alt="AAD App Reg Credential Checker icon" style="width:300px;"/>
+
+**[<img src="https://external-content.duckduckgo.com/iu/?u=https%3A%2F%2Fwww.iconsdb.com%2Ficons%2Fpreview%2Froyal-blue%2Fdata-transfer-download-xxl.png&f=1&nofb=1" alt="Download the solution here!" style="width:15px;margin-right:10px;"/>__Download the solution here!__](https://github.com/cupo365/aad-app-registration-credential-checker/releases/tag/v2.0.0)**
