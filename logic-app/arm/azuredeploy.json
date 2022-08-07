@@ -420,6 +420,18 @@
                                                     "@parameters('parDryRun')",
                                                     "@false"
                                                 ]
+                                            },
+                                            {
+                                                "equals": [
+                                                    "@empty(parameters('parNotificationObservers'))",
+                                                    "@false"
+                                                ]
+                                            },
+                                            {
+                                                "equals": [
+                                                    "@contains(variables('varExpiringSecretsTable'), '<tr>')",
+                                                    "@true"
+                                                ]
                                             }
                                         ]
                                     },
