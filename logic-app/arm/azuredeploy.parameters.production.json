@@ -1,0 +1,39 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentParameters.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "stage": {
+      "value": "Production"
+    },
+    "logicApp_name": {
+      "value": "AAD_App_Reg_Credential_Checker"
+    },
+    "logicApp_parameter_parCulture": {
+      "value": "1043"
+    },
+    "logicApp_parameter_parDryRun": {
+      "value": true
+    },
+    "logicApp_parameter_parErrorObservers": {
+      "value": "info@cupo365.gg"
+    },
+    "logicApp_parameter_parExpiresSoonBoundary": {
+      "value": 30
+    },
+    "logicApp_parameter_parExpiresVerySoonBoundary": {
+      "value": 15
+    },
+    "logicApp_parameter_parNotificationObservers": {
+      "value": "info@cupo365.gg"
+    },
+    "logicApp_parameter_parNotifyIfExpirationIsWithinTheNextXDays": {
+      "value": 60
+    },
+    "logicApp_parameter_parRunsEveryXDays": {
+      "value": 30
+    },
+    "connections_office365_name": {
+      "value": "office365"
+    }
+  }
+}

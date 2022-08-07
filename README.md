@@ -1,4 +1,4 @@
-# Automated App Registration Secrets & Certificates Expiration Notifier
+# AAD App Registration Credential Checker Logic App
 
 ## Table of Contents
   - [Summary](#summary)
@@ -6,39 +6,47 @@
   - [Prerequisites](#prerequisites)
   - [Solution](#solution)
   - [Version history](#version-history)
+  - [Supported languages](#supported-languages)
   - [How to implement](#how-to-implement)
+  - [Download the solution files](#download-the-solution-files)
 
 ## Summary
 
-Automate fetching and displaying an overview of all expiring Azure App Registration secrets and certificates within one or more configured tenants with this Power Automate workflow.
+TODO
 
-**[<img src="https://external-content.duckduckgo.com/iu/?u=https%3A%2F%2Fwww.iconsdb.com%2Ficons%2Fpreview%2Froyal-blue%2Fdata-transfer-download-xxl.png&f=1&nofb=1" alt="Download .sppkg file" style="width:15px;margin-right:10px;"/>__Download the .zip file here!__](AppRegistrationSecretsAndCertificatesExpirationNotifier.zip)**
+**[<img src="https://external-content.duckduckgo.com/iu/?u=https%3A%2F%2Fwww.iconsdb.com%2Ficons%2Fpreview%2Froyal-blue%2Fdata-transfer-download-xxl.png&f=1&nofb=1" alt="Download the solution files here!" style="width:15px;margin-right:10px;"/>__Download the solution files here!__](https://github.com/cupo365/aad-app-registration-credential-checker/releases/tag/v2.0.0)**
 
 ## Applies to
 
-- [Power Automate](https://powerautomate.microsoft.com/en-us/)
+- [Logic Apps](https://docs.microsoft.com/en-us/azure/logic-apps/logic-apps-overview)
 - [Azure App Registrations](https://docs.microsoft.com/en-us/azure/active-directory/develop/quickstart-register-app)
 
 ## Prerequisites
 
-> - A Power Automate per user or per flow plan that allows you to use the HTTP connector (see [Power Automate pricing](https://powerautomate.microsoft.com/en-us/pricing/))
-> - An Outlook Online mailbox to send the notification to
-> - An Azure App Registration within the tenant of which you want to receive automated notifications from. This App Registration should have ONE of the following Microsoft Graph Application type (not Delegated) Permissions: Application.Read.All, Application.ReadWrite.All, Directory.Read.All or Directory.AccessAsUser.All
+> - TODO
 
 ## Solution
 
-Solution|Author(s)
---------|---------
-Automated App Registration Secrets & Certificates Expiration Notifier | cup o'365 ([contact](mailto:info@cupo365.gg), [website](https://cupo365.gg/))
+| Solution                                | Author(s)                                     |
+| --------------------------------------- | --------------------------------------------- |
+| AAD App Registration Credential Checker | cup o'365 ([contact](mailto:info@cupo365.gg)) |
 
 ## Version history
 
-Version|Date|Comments
--------|----|--------
-1.0|April 3, 2022|Initial release
+| Version                                                                                       | Date           | Comments          |
+| --------------------------------------------------------------------------------------------- | -------------- | ----------------- |
+| [1.0](https://github.com/cupo365/aad-app-registration-credential-checker/releases/tag/v1.0.0) | April 3, 2022  | Initial release   |
+| [2.0](https://github.com/cupo365/aad-app-registration-credential-checker/releases/tag/v2.0.0) | August 8, 2022 | Logic app release |
 
----
+## Supported languages
+
+- English
+- Dutch
 
 ## How to implement
 
 TODO
+
+## Download the solution files
+
+**[<img src="https://external-content.duckduckgo.com/iu/?u=https%3A%2F%2Fwww.iconsdb.com%2Ficons%2Fpreview%2Froyal-blue%2Fdata-transfer-download-xxl.png&f=1&nofb=1" alt="Download the solution files here!" style="width:15px;margin-right:10px;"/>__Download the solution files here!__](https://github.com/cupo365/aad-app-registration-credential-checker/releases/tag/v2.0.0)**
