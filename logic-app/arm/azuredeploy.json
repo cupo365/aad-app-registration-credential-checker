@@ -698,17 +698,9 @@
             "type": "string",
             "value": "[reference(resourceId('Microsoft.Logic/workflows', parameters('logicApp_name')), '2017-07-01', 'full').identity.principalId]"
         },
-        "TenantId": {
-            "type": "string",
-            "value": "[subscription().tenantId]"
-        },
         "Office365ConnectionName": {
             "type": "string",
             "value": "[parameters('connections_office365_name')]"
-        },
-        "ResourceGroupName": {
-            "type": "string",
-            "value": "[resourceGroup().name]"
         }
     }
 }

@@ -9,7 +9,7 @@
       "value": "AAD_App_Reg_Credential_Checker"
     },
     "logicApp_parameter_parCulture": {
-      "value": "1043"
+      "value": "1033"
     },
     "logicApp_parameter_parDryRun": {
       "value": true

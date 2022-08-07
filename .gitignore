@@ -1,0 +1,5 @@
+# Media files
+*.psd
+
+# Resources
+resources/*.xml
