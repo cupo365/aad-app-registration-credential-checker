@@ -12,7 +12,7 @@
         },
         "logicApp_name": {
             "type": "string",
-            "defaultValue": "AAD_App_Reg_Credential_Checker"
+            "defaultValue": "logic-aadappregcredentialchecker-singletenant"
         },
         "logicApp_parameter_parCulture": {
             "type": "string",
@@ -200,7 +200,7 @@
                                         "value": {
                                             "ApplicationId": {
                                                 "1033": "Application ID",
-                                                "1043": "Application ID"
+                                                "1043": "Applicatie ID"
                                             },
                                             "Certificate": {
                                                 "1033": "Certificate",

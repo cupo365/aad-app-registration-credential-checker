@@ -6,7 +6,7 @@
       "value": "Production"
     },
     "logicApp_name": {
-      "value": "AAD_App_Reg_Credential_Checker"
+      "value": "logic-aadappregcredentialchecker-singletenant"
     },
     "logicApp_parameter_parCulture": {
       "value": "1033"

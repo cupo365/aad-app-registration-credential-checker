@@ -1,0 +1,36 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentParameters.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "stage": {
+      "value": "Production"
+    },
+    "logicApp_name": {
+      "value": "logic-aadappregcredentialchecker-multitenant"
+    },
+    "logicApp_parameter_parDryRun": {
+      "value": true
+    },
+    "logicApp_parameter_parTenantsToCheck": {
+      "value": [
+        {
+          "TenantId": "",
+          "ClientId": "",
+          "ClientSecret": "",
+          "NotificationObservers": "info@cupo365.gg",
+          "ErrorObservers": "info@cupo365.gg",
+          "Culture": "1033",
+          "NotifyIfExpirationIsWithinTheNextXDays": 60,
+          "ExpiresSoonBoundary": 30,
+          "ExpiresVerySoonBoundary": 15
+        }
+      ]
+    },
+    "logicApp_parameter_parRunsEveryXDays": {
+      "value": 30
+    },
+    "connections_office365_name": {
+      "value": "office365"
+    }
+  }
+}

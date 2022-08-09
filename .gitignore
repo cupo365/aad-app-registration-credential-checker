@@ -3,3 +3,7 @@
 
 # Resources
 resources/*.xml
+
+# Environment variables
+*.env
+*.env.local

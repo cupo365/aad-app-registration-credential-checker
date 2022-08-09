@@ -36,16 +36,18 @@ The overview you receive contains extensive information about the expiring crede
 
 ## Solution
 
-| Solution                                | Author(s)                                     |
-| --------------------------------------- | --------------------------------------------- |
-| AAD App Registration Credential Checker | cup o'365 ([contact](mailto:info@cupo365.gg)) |
+| Solution                                              | Author(s)                                     |
+| ----------------------------------------------------- | --------------------------------------------- |
+| AAD App Registration Credential Checker Single Tenant | cup o'365 ([contact](mailto:info@cupo365.gg)) |
+| AAD App Registration Credential Checker Multi Tenant  | cup o'365 ([contact](mailto:info@cupo365.gg)) |
 
 ## Version history
 
-| Version                                                                                       | Date           | Comments          |
-| --------------------------------------------------------------------------------------------- | -------------- | ----------------- |
-| [1.0](https://github.com/cupo365/aad-app-registration-credential-checker/releases/tag/v1.0.0) | April 3, 2022  | Initial release   |
-| [2.0](https://github.com/cupo365/aad-app-registration-credential-checker/releases/tag/v2.0.0) | August 7, 2022 | Logic app release |
+| Version                                                                                       | Date           | Comments                       |
+| --------------------------------------------------------------------------------------------- | -------------- | ------------------------------ |
+| [1.0](https://github.com/cupo365/aad-app-registration-credential-checker/releases/tag/v1.0.0) | April 3, 2022  | Initial release                |
+| [2.0](https://github.com/cupo365/aad-app-registration-credential-checker/releases/tag/v2.0.0) | August 7, 2022 | Logic app release              |
+| [2.1](https://github.com/cupo365/aad-app-registration-credential-checker/releases/tag/v2.1.0) | August 9, 2022 | Single & multi tenant versions |
 
 ## Supported languages
 

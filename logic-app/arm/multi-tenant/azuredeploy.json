@@ -1,0 +1,787 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "location": {
+            "type": "string",
+            "defaultValue": "[resourceGroup().location]"
+        },
+        "stage": {
+            "type": "string",
+            "defaultValue": "Production"
+        },
+        "logicApp_name": {
+            "type": "string",
+            "defaultValue": "logic-aadappregcredentialchecker-multitenant"
+        },
+        "logicApp_parameter_parDryRun": {
+            "type": "bool",
+            "defaultValue": true
+        },
+        "logicApp_parameter_parTenantsToCheck": {
+            "type": "array"
+        },
+        "logicApp_parameter_parRunsEveryXDays": {
+            "type": "int",
+            "defaultValue": 30
+        },
+        "connections_office365_name": {
+            "defaultValue": "office365",
+            "type": "string"
+        }
+    },
+    "variables": {},
+    "resources": [
+        {
+            "type": "Microsoft.Web/connections",
+            "apiVersion": "2016-06-01",
+            "name": "[parameters('connections_office365_name')]",
+            "location": "[parameters('location')]",
+            "properties": {
+                "api": {
+                    "name": "[parameters('connections_office365_name')]",
+                    "displayName": "Office 365 Outlook",
+                    "description": "Microsoft Office 365 is a cloud-based service that is designed to help meet your organization's needs for robust security, reliability, and user productivity.",
+                    "iconUri": "[concat('https://connectoricons-prod.azureedge.net/releases/v1.0.1507/1.0.1507.2528/', parameters('connections_office365_name'), '/icon.png')]",
+                    "brandColor": "#0078D4",
+                    "id": "[concat('/subscriptions/', subscription().subscriptionId, '/providers/Microsoft.Web/locations/', parameters('location'), '/managedApis/', parameters('connections_office365_name'))]",
+                    "type": "Microsoft.Web/locations/managedApis"
+                }
+            }
+        },
+        {
+            "type": "Microsoft.Logic/workflows",
+            "apiVersion": "2017-07-01",
+            "name": "[parameters('logicApp_name')]",
+            "location": "[parameters('location')]",
+            "tags": {
+                "Id": "[parameters('logicApp_name')]",
+                "Stage": "[parameters('stage')]"
+            },
+            "dependsOn": [
+                "[resourceId('Microsoft.Web/connections', parameters('connections_office365_name'))]"
+            ],
+            "identity": {
+                "type": "SystemAssigned"
+            },
+            "properties": {
+                "state": "Disabled",
+                "definition": {
+                    "$schema": "https://schema.management.azure.com/providers/Microsoft.Logic/schemas/2016-06-01/workflowdefinition.json#",
+                    "actions": {
+                        "Condition_-_If_flow_run_does_not_have_errors": {
+                            "actions": {
+                                "Terminate_-_Flow_run_succeeded": {
+                                    "inputs": {
+                                        "runStatus": "Succeeded"
+                                    },
+                                    "runAfter": {},
+                                    "type": "Terminate"
+                                }
+                            },
+                            "else": {
+                                "actions": {
+                                    "Terminate_-_Flow_run_failed": {
+                                        "inputs": {
+                                            "runError": {
+                                                "code": "424",
+                                                "message": "Failed dependency"
+                                            },
+                                            "runStatus": "Failed"
+                                        },
+                                        "runAfter": {},
+                                        "type": "Terminate"
+                                    }
+                                }
+                            },
+                            "expression": {
+                                "and": [
+                                    {
+                                        "equals": [
+                                            "@variables('varHasErrors')",
+                                            "@false"
+                                        ]
+                                    }
+                                ]
+                            },
+                            "runAfter": {
+                                "For_each_-_Tenant_to_check": [
+                                    "Succeeded"
+                                ]
+                            },
+                            "type": "If"
+                        },
+                        "For_each_-_Tenant_to_check": {
+                            "actions": {
+                                "Scope_-_Catch": {
+                                    "actions": {
+                                        "Condition_-_If_flow_is_not_in_dry_run_mode_and_an_observer_has_been_configured": {
+                                            "actions": {
+                                                "Send_an_email_(V2)_-_Notify_error_observers": {
+                                                    "inputs": {
+                                                        "body": {
+                                                            "Body": "@{replace(replace(replace(replace(variables('varLocalizations')?['ErrorEmailBody']?[item()?['Culture']], '{WORKFLOW_NAME}', workflow()['name']), '{WORKFLOW_ENVIRONMENT}', workflow()['location']), '{WORKFLOW_RUN_URL}', concat('https://portal.azure.com/#view/Microsoft_Azure_EMA/LogicAppsMonitorBlade/runid/', encodeUriComponent(workflow()?['run']['id']))), '{TENANT_ID}', item()['TenantId'])}",
+                                                            "Importance": "High",
+                                                            "Subject": "@{replace(variables('varLocalizations')?['ErrorEmailSubject']?[item()?['Culture']], '{WORKFLOW_NAME}', workflow()['name'])}",
+                                                            "To": "@item()['parErrorObservers']"
+                                                        },
+                                                        "host": {
+                                                            "connection": {
+                                                                "name": "@parameters('$connections')['office365']['connectionId']"
+                                                            }
+                                                        },
+                                                        "method": "post",
+                                                        "path": "/v2/Mail"
+                                                    },
+                                                    "runAfter": {},
+                                                    "type": "ApiConnection"
+                                                }
+                                            },
+                                            "expression": {
+                                                "and": [
+                                                    {
+                                                        "equals": [
+                                                            "@parameters('parDryRun')",
+                                                            "@false"
+                                                        ]
+                                                    },
+                                                    {
+                                                        "equals": [
+                                                            "@empty(item()['parErrorObservers'])",
+                                                            "@false"
+                                                        ]
+                                                    }
+                                                ]
+                                            },
+                                            "runAfter": {
+                                                "Set_variable_-_varHasErrors": [
+                                                    "Succeeded"
+                                                ]
+                                            },
+                                            "type": "If"
+                                        },
+                                        "Set_variable_-_varHasErrors": {
+                                            "inputs": {
+                                                "name": "varHasErrors",
+                                                "value": "@true"
+                                            },
+                                            "runAfter": {},
+                                            "type": "SetVariable"
+                                        }
+                                    },
+                                    "description": "Flow execution scope in case of an (unexpected) error in one of the actions in the Try scope.",
+                                    "runAfter": {
+                                        "Scope_-_Try": [
+                                            "Failed",
+                                            "TimedOut"
+                                        ]
+                                    },
+                                    "type": "Scope"
+                                },
+                                "Scope_-_Try": {
+                                    "actions": {
+                                        "Append_to_string_variable_-_Close_varExpiringSecretsTable": {
+                                            "inputs": {
+                                                "name": "varExpiringSecretsTable",
+                                                "value": "<tbody></table>"
+                                            },
+                                            "runAfter": {
+                                                "For_each_-_Application_in_tenant": [
+                                                    "Succeeded"
+                                                ]
+                                            },
+                                            "type": "AppendToStringVariable"
+                                        },
+                                        "Condition_-_If_flow_is_not_in_dry_run_mode_1": {
+                                            "actions": {
+                                                "Send_an_email_(V2)_-_Notify_configured_observers": {
+                                                    "inputs": {
+                                                        "body": {
+                                                            "Body": "@{replace(replace(replace(variables('varLocalizations')?['NotificationEmailBody']?[item()?['Culture']], '{CONFIGURED_DAYS_BOUNDARY}', string(item()['NotifyIfExpirationIsWithinTheNextXDays'])), '{EXPIRATION_TABLE}', variables('varExpiringSecretsTable')), '{TENANT_ID}', item()['TenantId'])}",
+                                                            "Importance": "High",
+                                                            "Subject": "@{replace(variables('varLocalizations')?['NotificationEmailSubject']?[item()?['Culture']], '{CONFIGURED_DAYS_BOUNDARY}', string(item()['NotifyIfExpirationIsWithinTheNextXDays']))}",
+                                                            "To": "@item()['NotificationObservers']"
+                                                        },
+                                                        "host": {
+                                                            "connection": {
+                                                                "name": "@parameters('$connections')['office365']['connectionId']"
+                                                            }
+                                                        },
+                                                        "method": "post",
+                                                        "path": "/v2/Mail"
+                                                    },
+                                                    "runAfter": {},
+                                                    "type": "ApiConnection"
+                                                }
+                                            },
+                                            "else": {
+                                                "actions": {
+                                                    "Compose_-_Show_proposed_table_for_debug": {
+                                                        "inputs": "@variables('varExpiringSecretsTable')",
+                                                        "runAfter": {},
+                                                        "type": "Compose"
+                                                    }
+                                                }
+                                            },
+                                            "expression": {
+                                                "and": [
+                                                    {
+                                                        "equals": [
+                                                            "@parameters('parDryRun')",
+                                                            "@false"
+                                                        ]
+                                                    },
+                                                    {
+                                                        "equals": [
+                                                            "@empty(item()['NotificationObservers'])",
+                                                            "@false"
+                                                        ]
+                                                    },
+                                                    {
+                                                        "equals": [
+                                                            "@contains(variables('varExpiringSecretsTable'), '<tr>')",
+                                                            "@true"
+                                                        ]
+                                                    }
+                                                ]
+                                            },
+                                            "runAfter": {
+                                                "Append_to_string_variable_-_Close_varExpiringSecretsTable": [
+                                                    "Succeeded"
+                                                ]
+                                            },
+                                            "type": "If"
+                                        },
+                                        "For_each_-_Application_in_tenant": {
+                                            "actions": {
+                                                "Compose_-_Show_current_loop_item_for_debug_2": {
+                                                    "inputs": "@item()",
+                                                    "runAfter": {},
+                                                    "type": "Compose"
+                                                },
+                                                "For_each_-_Application_certificate_credential": {
+                                                    "actions": {
+                                                        "Compose_-_Show_current_loop_item_for_debug_4": {
+                                                            "inputs": "@item()",
+                                                            "runAfter": {},
+                                                            "type": "Compose"
+                                                        },
+                                                        "Condition_-_If_certificate_expires_within_the_configured_boundaries": {
+                                                            "actions": {
+                                                                "Append_to_string_variable_-_Append_expiring_certificate_to_table": {
+                                                                    "inputs": {
+                                                                        "name": "varExpiringSecretsTable",
+                                                                        "value": "<tr><td @{variables('varStyling').cellStyle}><a href=\"https://ms.portal.azure.com/#blade/Microsoft_AAD_RegisteredApps/ApplicationMenuBlade/Credentials/appId/@{items('For_each_-_Application_in_tenant')?['appId']}/isMSAApp/\">@{items('For_each_-_Application_in_tenant')?['appId']}</a></td><td @{variables('varStyling').cellStyle}>@{items('For_each_-_Application_in_tenant')['displayName']}</td><td @{variables('varStyling').cellStyle}>@{variables('varLocalizations')?['Certificate']?[items('For_each_-_Tenant_to_check')?['Culture']]}</td><td @{variables('varStyling').cellStyle}>@{if(equals(empty(item()['displayName']),false), item()['displayName'], '-')}</td><td @{if(less(outputs('Compose_-_Calculate_days_until_certificate_expiration'), items('For_each_-_Tenant_to_check')['ExpiresVerySoonBoundary']), variables('varStyling').redStyle, if(less(outputs('Compose_-_Calculate_days_until_certificate_expiration'), items('For_each_-_Tenant_to_check')['ExpiresSoonBoundary']), variables('varStyling').yellowStyle, variables('varStyling').cellStyle))}> @{outputs('Compose_-_Calculate_days_until_certificate_expiration')}</td><td @{variables('varStyling').cellStyle}>@{formatDateTime(item()?['endDateTime'], variables('varLocalizations')?['DateFormat']?[items('For_each_-_Tenant_to_check')?['Culture']])}</td><td @{variables('varStyling').cellStyle}>@{if(equals(empty(body('Select_-_Fetch_all_owner_email_addresses')), false), join(body('Select_-_Fetch_all_owner_email_addresses'), ', '),variables('varLocalizations')?['NoneFound']?[items('For_each_-_Tenant_to_check')?['Culture']])}</td></tr>"
+                                                                    },
+                                                                    "runAfter": {
+                                                                        "Compose_-_Calculate_days_until_certificate_expiration": [
+                                                                            "Succeeded"
+                                                                        ]
+                                                                    },
+                                                                    "type": "AppendToStringVariable"
+                                                                },
+                                                                "Compose_-_Calculate_days_until_certificate_expiration": {
+                                                                    "inputs": "@div(div(div(mul(sub(ticks(item()?['endDateTime']),ticks(utcNow())),100),1000000000), 3600), 24)",
+                                                                    "runAfter": {},
+                                                                    "type": "Compose"
+                                                                }
+                                                            },
+                                                            "expression": {
+                                                                "and": [
+                                                                    {
+                                                                        "lessOrEquals": [
+                                                                            "@item()?['endDateTime']",
+                                                                            "@body('Get_future_time_-_Calculate_outer_bounds_of_apps_to_fetch')"
+                                                                        ]
+                                                                    }
+                                                                ]
+                                                            },
+                                                            "runAfter": {
+                                                                "Compose_-_Show_current_loop_item_for_debug_4": [
+                                                                    "Succeeded"
+                                                                ]
+                                                            },
+                                                            "type": "If"
+                                                        }
+                                                    },
+                                                    "foreach": "@item()?['keyCredentials']",
+                                                    "runAfter": {
+                                                        "For_each_-_Application_secret_credential": [
+                                                            "Succeeded"
+                                                        ]
+                                                    },
+                                                    "type": "Foreach"
+                                                },
+                                                "For_each_-_Application_secret_credential": {
+                                                    "actions": {
+                                                        "Compose_-_Show_current_loop_item_for_debug_3": {
+                                                            "inputs": "@item()",
+                                                            "runAfter": {},
+                                                            "type": "Compose"
+                                                        },
+                                                        "Condition_-_If_secret_expires_within_the_configured_boundaries": {
+                                                            "actions": {
+                                                                "Append_to_string_variable_-_Append_expiring_secret_to_table": {
+                                                                    "inputs": {
+                                                                        "name": "varExpiringSecretsTable",
+                                                                        "value": "<tr><td @{variables('varStyling').cellStyle}><a href=\"https://ms.portal.azure.com/#blade/Microsoft_AAD_RegisteredApps/ApplicationMenuBlade/Credentials/appId/@{items('For_each_-_Application_in_tenant')?['appId']}/isMSAApp/\">@{items('For_each_-_Application_in_tenant')?['appId']}</a></td><td @{variables('varStyling').cellStyle}>@{items('For_each_-_Application_in_tenant')['displayName']}</td><td @{variables('varStyling').cellStyle}>@{variables('varLocalizations')?['Secret']?[items('For_each_-_Tenant_to_check')?['Culture']]}</td><td @{variables('varStyling').cellStyle}>@{if(equals(empty(item()['displayName']),false), item()['displayName'], '-')}</td><td @{if(less(outputs('Compose_-_Calculate_days_until_secret_expiration'), items('For_each_-_Tenant_to_check')['ExpiresVerySoonBoundary']), variables('varStyling').redStyle, if(less(outputs('Compose_-_Calculate_days_until_secret_expiration'), items('For_each_-_Tenant_to_check')['ExpiresSoonBoundary']), variables('varStyling').yellowStyle, variables('varStyling').cellStyle))}> @{outputs('Compose_-_Calculate_days_until_secret_expiration')}</td><td @{variables('varStyling').cellStyle}>@{formatDateTime(item()?['endDateTime'], variables('varLocalizations')?['DateFormat']?[items('For_each_-_Tenant_to_check')?['Culture']])}</td><td @{variables('varStyling').cellStyle}>@{if(equals(empty(body('Select_-_Fetch_all_owner_email_addresses')), false), join(body('Select_-_Fetch_all_owner_email_addresses'), ', '),variables('varLocalizations')?['NoneFound']?[items('For_each_-_Tenant_to_check')?['Culture']])}</td></tr>"
+                                                                    },
+                                                                    "runAfter": {
+                                                                        "Compose_-_Calculate_days_until_secret_expiration": [
+                                                                            "Succeeded"
+                                                                        ]
+                                                                    },
+                                                                    "type": "AppendToStringVariable"
+                                                                },
+                                                                "Compose_-_Calculate_days_until_secret_expiration": {
+                                                                    "inputs": "@div(div(div(mul(sub(ticks(item()?['endDateTime']),ticks(utcNow())),100),1000000000), 3600), 24)",
+                                                                    "runAfter": {},
+                                                                    "type": "Compose"
+                                                                }
+                                                            },
+                                                            "expression": {
+                                                                "and": [
+                                                                    {
+                                                                        "lessOrEquals": [
+                                                                            "@item()?['endDateTime']",
+                                                                            "@body('Get_future_time_-_Calculate_outer_bounds_of_apps_to_fetch')"
+                                                                        ]
+                                                                    }
+                                                                ]
+                                                            },
+                                                            "runAfter": {
+                                                                "Compose_-_Show_current_loop_item_for_debug_3": [
+                                                                    "Succeeded"
+                                                                ]
+                                                            },
+                                                            "type": "If"
+                                                        }
+                                                    },
+                                                    "foreach": "@item()?['passwordCredentials']",
+                                                    "runAfter": {
+                                                        "Select_-_Fetch_all_owner_email_addresses": [
+                                                            "Succeeded"
+                                                        ]
+                                                    },
+                                                    "type": "Foreach"
+                                                },
+                                                "HTTP_-_Fetch_application_owners": {
+                                                    "inputs": {
+                                                        "authentication": {
+                                                            "type": "Raw",
+                                                            "value": "Bearer @{outputs('Compose_-_Access_token')}"
+                                                        },
+                                                        "method": "GET",
+                                                        "uri": "https://graph.microsoft.com/v1.0/applications/@{item()?['id']}/owners"
+                                                    },
+                                                    "runAfter": {
+                                                        "Compose_-_Show_current_loop_item_for_debug_2": [
+                                                            "Succeeded"
+                                                        ]
+                                                    },
+                                                    "type": "Http"
+                                                },
+                                                "Select_-_Fetch_all_owner_email_addresses": {
+                                                    "inputs": {
+                                                        "from": "@outputs('HTTP_-_Fetch_application_owners')?['body']?['value']",
+                                                        "select": "@item()?['mail']"
+                                                    },
+                                                    "runAfter": {
+                                                        "HTTP_-_Fetch_application_owners": [
+                                                            "Succeeded",
+                                                            "Failed",
+                                                            "TimedOut"
+                                                        ]
+                                                    },
+                                                    "type": "Select"
+                                                }
+                                            },
+                                            "foreach": "@variables('varApplicationsInTenant')",
+                                            "runAfter": {
+                                                "Until_-_All_applications_in_the_tenant_are_fetched": [
+                                                    "Succeeded"
+                                                ]
+                                            },
+                                            "type": "Foreach"
+                                        },
+                                        "Get_future_time_-_Calculate_outer_bounds_of_apps_to_fetch": {
+                                            "inputs": {
+                                                "interval": "@item()?['NotifyIfExpirationIsWithinTheNextXDays']",
+                                                "timeUnit": "Day"
+                                            },
+                                            "kind": "GetFutureTime",
+                                            "runAfter": {
+                                                "Scope_-_Set_variables": [
+                                                    "Succeeded"
+                                                ]
+                                            },
+                                            "type": "Expression"
+                                        },
+                                        "Scope_-_Fetch_access_token": {
+                                            "actions": {
+                                                "Compose_-_Access_token": {
+                                                    "inputs": "@outputs('HTTP_-_Request_access_token')?['body']?['access_token']",
+                                                    "runAfter": {
+                                                        "HTTP_-_Request_access_token": [
+                                                            "Succeeded"
+                                                        ]
+                                                    },
+                                                    "type": "Compose"
+                                                },
+                                                "HTTP_-_Request_access_token": {
+                                                    "inputs": {
+                                                        "body": "client_id=@{item()['ClientId']}&scope=https://graph.microsoft.com/.default&client_secret=@{item()['ClientSecret']}&grant_type=client_credentials",
+                                                        "headers": {
+                                                            "Content-Type": "application/x-www-form-urlencoded"
+                                                        },
+                                                        "method": "POST",
+                                                        "uri": "https://login.microsoftonline.com/@{item()['TenantId']}/oauth2/v2.0/token"
+                                                    },
+                                                    "runAfter": {},
+                                                    "type": "Http"
+                                                }
+                                            },
+                                            "runAfter": {
+                                                "Get_future_time_-_Calculate_outer_bounds_of_apps_to_fetch": [
+                                                    "Succeeded"
+                                                ]
+                                            },
+                                            "type": "Scope"
+                                        },
+                                        "Scope_-_Set_variables": {
+                                            "actions": {
+                                                "Set_variable_-_Reset_varApplicationsInTenant": {
+                                                    "inputs": {
+                                                        "name": "varApplicationsInTenant",
+                                                        "value": []
+                                                    },
+                                                    "runAfter": {},
+                                                    "type": "SetVariable"
+                                                },
+                                                "Set_variable_-_Reset_varExpiringSecretsTable": {
+                                                    "inputs": {
+                                                        "name": "varExpiringSecretsTable",
+                                                        "value": "<table @{variables('varStyling').tableStyle}><thead><th @{variables('varStyling').headerStyle}>@{variables('varLocalizations')?['ApplicationId']?[item()?['Culture']]}</th><th @{variables('varStyling').headerStyle}>@{variables('varLocalizations')?['DisplayName']?[item()?['Culture']]}</th><th @{variables('varStyling').headerStyle}>@{variables('varLocalizations')?['Type']?[item()?['Culture']]}</th><th @{variables('varStyling').headerStyle}>@{variables('varLocalizations')?['Description']?[item()?['Culture']]}</th><th @{variables('varStyling').headerStyle}>@{variables('varLocalizations')?['DaysUntilExpiration']?[item()?['Culture']]}</th><th @{variables('varStyling').headerStyle}>@{variables('varLocalizations')?['ExpirationDate']?[item()?['Culture']]}</th><th @{variables('varStyling').headerStyle}>@{variables('varLocalizations')?['Owners']?[item()?['Culture']]}</th></thead><tbody>"
+                                                    },
+                                                    "runAfter": {
+                                                        "Set_variable_-_Reset_varApplicationsInTenant": [
+                                                            "Succeeded"
+                                                        ]
+                                                    },
+                                                    "type": "SetVariable"
+                                                },
+                                                "Set_variable_-_Reset_varGraphUri": {
+                                                    "description": "The graph API URI to request the list of AAD applications. The $select only returns the necessary attributes and to overwrite the default 100 items per page, the $top is set to 999 so it uses less requests (1 per 1000 apps vs 10 per 1000) ",
+                                                    "inputs": {
+                                                        "name": "varGraphUri",
+                                                        "value": "https://graph.microsoft.com/v1.0/applications?$select=id,appId,displayName,passwordCredentials,keyCredentials&$top=999"
+                                                    },
+                                                    "runAfter": {
+                                                        "Set_variable_-_Reset_varExpiringSecretsTable": [
+                                                            "Succeeded"
+                                                        ]
+                                                    },
+                                                    "type": "SetVariable"
+                                                }
+                                            },
+                                            "runAfter": {},
+                                            "type": "Scope"
+                                        },
+                                        "Until_-_All_applications_in_the_tenant_are_fetched": {
+                                            "actions": {
+                                                "For_each_-_Fetched_application": {
+                                                    "actions": {
+                                                        "Append_to_array_variable_-_varApplicationsInTenant": {
+                                                            "inputs": {
+                                                                "name": "varApplicationsInTenant",
+                                                                "value": "@item()"
+                                                            },
+                                                            "runAfter": {},
+                                                            "type": "AppendToArrayVariable"
+                                                        }
+                                                    },
+                                                    "foreach": "@outputs('HTTP_-_Fetch_applications_in_tenant')?['body']?['value']",
+                                                    "runAfter": {
+                                                        "Set_variable_-_Set_varGraphUri_to_nextlink": [
+                                                            "Succeeded"
+                                                        ]
+                                                    },
+                                                    "type": "Foreach"
+                                                },
+                                                "HTTP_-_Fetch_applications_in_tenant": {
+                                                    "inputs": {
+                                                        "authentication": {
+                                                            "type": "Raw",
+                                                            "value": "Bearer @{outputs('Compose_-_Access_token')}"
+                                                        },
+                                                        "method": "GET",
+                                                        "uri": "@variables('varGraphUri')"
+                                                    },
+                                                    "runAfter": {},
+                                                    "type": "Http"
+                                                },
+                                                "Set_variable_-_Set_varGraphUri_to_nextlink": {
+                                                    "inputs": {
+                                                        "name": "varGraphUri",
+                                                        "value": "@{if(equals(empty(outputs('HTTP_-_Fetch_applications_in_tenant')?['body/@odata.nextLink']), false), outputs('HTTP_-_Fetch_applications_in_tenant')?['body/@odata.nextLink'], '')}"
+                                                    },
+                                                    "runAfter": {
+                                                        "HTTP_-_Fetch_applications_in_tenant": [
+                                                            "Succeeded",
+                                                            "TimedOut",
+                                                            "Failed"
+                                                        ]
+                                                    },
+                                                    "type": "SetVariable"
+                                                }
+                                            },
+                                            "expression": "@equals(empty(variables('varGraphUri')), true)",
+                                            "limit": {
+                                                "count": 60,
+                                                "timeout": "PT1H"
+                                            },
+                                            "runAfter": {
+                                                "Scope_-_Fetch_access_token": [
+                                                    "Succeeded"
+                                                ]
+                                            },
+                                            "type": "Until"
+                                        }
+                                    },
+                                    "description": "Main flow execution scope.",
+                                    "runAfter": {},
+                                    "type": "Scope"
+                                }
+                            },
+                            "foreach": "@parameters('parTenantsToCheck')",
+                            "runAfter": {
+                                "Initialize_variable_-_varHasErrors": [
+                                    "Succeeded"
+                                ]
+                            },
+                            "runtimeConfiguration": {
+                                "concurrency": {
+                                    "repetitions": 1
+                                }
+                            },
+                            "type": "Foreach"
+                        },
+                        "Initialize_variable_-_varApplicationsInTenant": {
+                            "inputs": {
+                                "variables": [
+                                    {
+                                        "name": "varApplicationsInTenant",
+                                        "type": "array"
+                                    }
+                                ]
+                            },
+                            "runAfter": {
+                                "Initialize_variable_-_varExpiringSecretsTable": [
+                                    "Succeeded"
+                                ]
+                            },
+                            "type": "InitializeVariable"
+                        },
+                        "Initialize_variable_-_varExpiringSecretsTable": {
+                            "inputs": {
+                                "variables": [
+                                    {
+                                        "name": "varExpiringSecretsTable",
+                                        "type": "string"
+                                    }
+                                ]
+                            },
+                            "runAfter": {
+                                "Initialize_variable_-_varStyling": [
+                                    "Succeeded"
+                                ]
+                            },
+                            "type": "InitializeVariable"
+                        },
+                        "Initialize_variable_-_varGraphUri": {
+                            "inputs": {
+                                "variables": [
+                                    {
+                                        "name": "varGraphUri",
+                                        "type": "string"
+                                    }
+                                ]
+                            },
+                            "runAfter": {
+                                "Initialize_variable_-_varLocalizations": [
+                                    "Succeeded"
+                                ]
+                            },
+                            "type": "InitializeVariable"
+                        },
+                        "Initialize_variable_-_varHasErrors": {
+                            "inputs": {
+                                "variables": [
+                                    {
+                                        "name": "varHasErrors",
+                                        "type": "boolean",
+                                        "value": "@false"
+                                    }
+                                ]
+                            },
+                            "runAfter": {
+                                "Initialize_variable_-_varApplicationsInTenant": [
+                                    "Succeeded"
+                                ]
+                            },
+                            "type": "InitializeVariable"
+                        },
+                        "Initialize_variable_-_varLocalizations": {
+                            "inputs": {
+                                "variables": [
+                                    {
+                                        "name": "varLocalizations",
+                                        "type": "object",
+                                        "value": {
+                                            "ApplicationId": {
+                                                "1033": "Application ID",
+                                                "1043": "Applicatie ID"
+                                            },
+                                            "Certificate": {
+                                                "1033": "Certificate",
+                                                "1043": "Certificaat"
+                                            },
+                                            "DateFormat": {
+                                                "1033": "MM/dd/yyyy HH:mm",
+                                                "1043": "HH:mm dd-MM-yyyy"
+                                            },
+                                            "DaysUntilExpiration": {
+                                                "1033": "Days Until Expiration",
+                                                "1043": "Dagen tot verloop"
+                                            },
+                                            "Description": {
+                                                "1033": "Description",
+                                                "1043": "Beschrijving"
+                                            },
+                                            "DisplayName": {
+                                                "1033": "Display Name",
+                                                "1043": "Weergavenaam"
+                                            },
+                                            "ErrorEmailBody": {
+                                                "1033": "<p>Dear sir/madam,<br>\n<br>\nAn error occurred in the workflow for fetching and displaying the expiring credentials for the Azure App Registrations in tenant '{TENANT_ID}'. More information is displayed below. Please review and act accordingly.<br>\n<br>\nWorkflow<br>\n{WORKFLOW_NAME}<br>\n<br>\nEnvironment<br>\n{WORKFLOW_ENVIRONMENT}<br>\n<br>\nLink to flow run<br>\n{WORKFLOW_RUN_URL}<br>\n<br>\nWith kind regards,<br>\n<br>\nAAD App Reg Credential Checker<br>\n<br>\n<span style=\"font-size: 9px\"><em>*This email has been automatically generated*</em></span></p>",
+                                                "1043": "<p>Beste,<br>\n<br>\nEr is een fout opgetreden in de werkstroom voor het ophalen van de te verlopen credentials voor de Azure App Registraties in tenant '{TENANT_ID}'. Hieronder meer informatie. Review en neem bijbehorende actie.<br>\n<br>\nWerkstroom<br>\n{WORKFLOW_NAME}<br>\n<br>\nOmgeving<br>\n{WORKFLOW_ENVIRONMENT}<br>\n<br>\nLink naar stroomuitvoering<br>\n{WORKFLOW_RUN_URL}<br>\n<br>\nMet vriendelijke groeten,<br>\n<br>\nAAD App Reg Credential Checker<br>\n<br>\n<span style=\"font-size: 9px\"><em>*Deze e-mail is automatisch gegenereerd*</em></span></p>"
+                                            },
+                                            "ErrorEmailSubject": {
+                                                "1033": "An error occurred in workflow '{WORKFLOW_NAME}'",
+                                                "1043": "Er is een fout opgetreden in werkstroom '{WORKFLOW_NAME}'"
+                                            },
+                                            "ExpirationDate": {
+                                                "1033": "Expiration Date",
+                                                "1043": "Verloopdatum"
+                                            },
+                                            "NoneFound": {
+                                                "1033": "None Found",
+                                                "1043": "Geen gevonden"
+                                            },
+                                            "NotificationEmailBody": {
+                                                "1033": "<p>Dear sir/madam,<br>\n<br>\nThe credentials of the Azure App Registrations in tenant '{TENANT_ID}' expiring within the next {CONFIGURED_DAYS_BOUNDARY} days have been outputted in the table below for your information. Please review and act accordingly.<br>\n<br>\n{EXPIRATION_TABLE}<br>\n<br>\nWith kind regards,<br>\n<br>\nAAD App Reg Credential Checker<br>\n<br>\n<span style=\"font-size: 9px\"><em>*This email has been automatically generated*</em></span></p>",
+                                                "1043": "<p>Beste,<br>\n<br>\nDe gegevens van de Azure App Registraties in tenant '{TENANT_ID}' die verlopen in de komende {CONFIGURED_DAYS_BOUNDARY} dagen zijn hieronder uiteengezet. Review en neem bijbehorende actie.<br>\n<br>\n{EXPIRATION_TABLE}<br>\n<br>\nMet vriendelijke groeten,<br>\n<br>\nAAD App Reg Credential Checker<br>\n<br>\n<span style=\"font-size: 9px\"><em>*Deze e-mail is automatisch gegenereerd*</em></span></p>"
+                                            },
+                                            "NotificationEmailSubject": {
+                                                "1033": "Azure App Registration credentials expiring in the next {CONFIGURED_DAYS_BOUNDARY} days",
+                                                "1043": "Azure App Registratie gegevens die verlopen over {CONFIGURED_DAYS_BOUNDARY} dagen"
+                                            },
+                                            "Owners": {
+                                                "1033": "Owner(s)",
+                                                "1043": "Eigenar(en)"
+                                            },
+                                            "Secret": {
+                                                "1033": "Secret",
+                                                "1043": "Secret"
+                                            },
+                                            "Type": {
+                                                "1033": "Type",
+                                                "1043": "Type"
+                                            }
+                                        }
+                                    }
+                                ]
+                            },
+                            "runAfter": {},
+                            "type": "InitializeVariable"
+                        },
+                        "Initialize_variable_-_varStyling": {
+                            "description": "Some CSS styling to highlight Azure AD app secrets that will be expiring soon (yellow) and very soon (red)",
+                            "inputs": {
+                                "variables": [
+                                    {
+                                        "name": "varStyling",
+                                        "type": "object",
+                                        "value": {
+                                            "cellStyle": "style=\"font-family: Calibri; padding: 5px; border: 1px solid black;\"",
+                                            "headerStyle": "style=\"font-family: Helvetica; padding: 5px; border: 1px solid black;\"",
+                                            "redStyle": "style=\"background-color:red; font-family: Calibri; padding: 5px; border: 1px solid black;\"",
+                                            "tableStyle": "style=\"border-collapse: collapse;\"",
+                                            "yellowStyle": "style=\"background-color:yellow; font-family: Calibri; padding: 5px; border: 1px solid black;\""
+                                        }
+                                    }
+                                ]
+                            },
+                            "runAfter": {
+                                "Initialize_variable_-_varGraphUri": [
+                                    "Succeeded"
+                                ]
+                            },
+                            "type": "InitializeVariable"
+                        }
+                    },
+                    "contentVersion": "1.0.0.0",
+                    "outputs": {},
+                    "parameters": {
+                        "$connections": {
+                            "defaultValue": {},
+                            "type": "Object"
+                        },
+                        "parDryRun": {
+                            "defaultValue": "[parameters('logicApp_parameter_parDryRun')]",
+                            "type": "Bool"
+                        },
+                        "parRunsEveryXDays": {
+                            "defaultValue": "[parameters('logicApp_parameter_parRunsEveryXDays')]",
+                            "type": "Int"
+                        },
+                        "parTenantsToCheck": {
+                            "defaultValue": "[parameters('logicApp_parameter_parTenantsToCheck')]",
+                            "type": "Array"
+                        }
+                    },
+                    "triggers": {
+                        "Recurrence_-_Run_every_X_days": {
+                            "recurrence": {
+                                "frequency": "Day",
+                                "interval": "@parameters('parRunsEveryXDays')"
+                            },
+                            "type": "Recurrence"
+                        }
+                    }
+                },
+                "parameters": {
+                    "$connections": {
+                        "value": {
+                            "office365": {
+                                "id": "[concat(subscription().id, '/providers/Microsoft.Web/locations/', parameters('location'), '/managedApis/', parameters('connections_office365_name'))]",
+                                "connectionId": "[resourceId('Microsoft.Web/connections', parameters('connections_office365_name'))]",
+                                "connectionName": "[parameters('connections_office365_name')]"
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    ],
+    "outputs": {
+        "LogicAppSystemAssignedIdentityObjectId": {
+            "type": "string",
+            "value": "[reference(resourceId('Microsoft.Logic/workflows', parameters('logicApp_name')), '2017-07-01', 'full').identity.principalId]"
+        },
+        "Office365ConnectionName": {
+            "type": "string",
+            "value": "[parameters('connections_office365_name')]"
+        }
+    }
+}

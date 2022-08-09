@@ -3,8 +3,8 @@ Param(
     [parameter(Mandatory = $true, ValueFromPipeline = $true)] [ValidateNotNullOrEmpty()] [string] $SubscriptionId,
     [parameter(Mandatory = $false, ValueFromPipeline = $true)] [ValidateNotNullOrEmpty()] [string] $ResourceGroupName = "rg-aadappregcredentialcheck",
     [parameter(Mandatory = $false, ValueFromPipeline = $true)] [ValidateNotNullOrEmpty()] [string] $ResourceGroupLocation = "West Europe",
-    [parameter(Mandatory = $false, ValueFromPipeline = $true)] [ValidateNotNullOrEmpty()] [string] $AzureResourceTemplateFilePath = "../arm/azuredeploy.json",
-    [parameter(Mandatory = $false, ValueFromPipeline = $true)] [ValidateNotNullOrEmpty()] [string] $AzureResourceTemplateParametersFilePath = "../arm/azuredeploy.parameters.production.json",
+    [parameter(Mandatory = $false, ValueFromPipeline = $true)] [ValidateNotNullOrEmpty()] [string] $AzureResourceTemplateFilePath = "../arm/single-tenant/azuredeploy.json",
+    [parameter(Mandatory = $false, ValueFromPipeline = $true)] [ValidateNotNullOrEmpty()] [string] $AzureResourceTemplateParametersFilePath = "../arm/single-tenant/azuredeploy.parameters.production.json",
     [parameter(Mandatory = $false, ValueFromPipeline = $true)] [array] $Modules = ("AzureAD", "Az", "AzureRm"), #"AzureRm"
     [parameter(Mandatory = $false, ValueFromPipeline = $true)] [array] $MsiPermissions = @( 
         [pscustomobject]@{ServicePrincipalId = "00000003-0000-0000-c000-000000000000"; Scope = "User.Read.All" }  
@@ -38,11 +38,11 @@ Param(
     
     .PARAMETER AzureResourceTemplateFilePath <string> [optional]
         The (relative) file path to the Azure Resource Manager template to deploy.
-        Default value is '../arm/azuredeploy.json'.
+        Default value is '../arm/single-tenant/azuredeploy.json'.
     
     .PARAMETER AzureResourceTemplateParametersFilePath <string> [optional]
         The (relative) file path to the Azure Resource Manager template parameters to deploy.
-        Default value is '../arm/azuredeploy.parameters.production.json'.
+        Default value is '../arm/single-tenant/azuredeploy.parameters.production.json'.
 
     .PARAMETER Modules <array> [optional]
         The required PowerShell modules to execute the program.
@@ -176,12 +176,12 @@ Function Install-PSModule {
         Install-Module -Name $ModuleName -Scope CurrentUser -AllowClobber -Force -ErrorAction Stop | Out-Null
         Write-Host "Successfully installed $($ModuleName)!" -ForegroundColor Green
 
-        Import-PSModule $ModuleName $true
+        #Import-PSModule $ModuleName $true
     }
     Catch [Exception] {
         Write-Host "Could not install $($ModuleName)." -ForegroundColor Yellow
         
-        Write-Host "Terminating program. Reason: could not import dependend modules." -ForegroundColor Red
+        Write-Host "Terminating program. Reason: could not install dependend modules." -ForegroundColor Red
         Finish-Up
     }
 }
