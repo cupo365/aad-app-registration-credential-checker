@@ -18,7 +18,7 @@ This solution periodically provides you with a birdseye overview of all upcoming
 The overview you receive contains extensive information about the expiring credentials, along with color coding to point out the earliest expiring ones. You are able to configure to whom the overview should be sent, what the boundaries of a credential expiring soon or very soon are and much more. For more information, check out the [list of functionalities](#list-of-functionalities). And with the included azuredeploy PowerShell script, you can have this solution **up-and-running within five minutes!** See [how to implement](#how-to-implement) here.
 
 
-**[<img src="https://external-content.duckduckgo.com/iu/?u=https%3A%2F%2Fwww.iconsdb.com%2Ficons%2Fpreview%2Froyal-blue%2Fdata-transfer-download-xxl.png&f=1&nofb=1" alt="Download the solution files here!" style="width:15px;margin-right:10px;"/>__Download the solution files here!__](https://github.com/cupo365/aad-app-registration-credential-checker/releases/tag/v2.0.0)**
+**[<img src="https://external-content.duckduckgo.com/iu/?u=https%3A%2F%2Fwww.iconsdb.com%2Ficons%2Fpreview%2Froyal-blue%2Fdata-transfer-download-xxl.png&f=1&nofb=1" alt="Download the solution files here!" style="width:15px;margin-right:10px;"/>__Download the solution files here!__](https://github.com/cupo365/aad-app-registration-credential-checker/releases/tag/v2.1.0)**
 
 ## Applies to
 
@@ -73,7 +73,7 @@ The overview you receive contains extensive information about the expiring crede
 
 ## How to implement
 
-With the included [azuredeploy PowerShell script](https://github.com/cupo365/aad-app-registration-credential-checker/releases/tag/v2.0.0), you can deploy and have the solution up-and-running within 5 minutes. The PowerShell scripts executes a program with certain steps. These steps will be explicated underneath. 
+With the included [azuredeploy PowerShell script](https://github.com/cupo365/aad-app-registration-credential-checker/releases/tag/v2.1.0), you can deploy and have the solution up-and-running within 5 minutes. The PowerShell scripts executes a program with certain steps. These steps will be explicated underneath. 
 - The script will validate the PowerShell runtime version. There is a known bug within PowerShell 7 for one of the required modules (Az), so only PowerShell 5.1 is allowed
 - The script will import all required PowerShell modules. If one or more modules are not yet present on the machine, these will be installed automatically. The required modules are:
   - AzureAD
@@ -82,7 +82,7 @@ With the included [azuredeploy PowerShell script](https://github.com/cupo365/aad
 - The script will prompt for credentials and login to Azure
   > Note: login with an admin account
 - The script will verify the existence of the Azure resource group (of which the name is configured in the parameters of the script). If the resource group does not yet exist, the script will create it
-- The script will deploy the included [Azure resource template](https://github.com/cupo365/aad-app-registration-credential-checker/releases/tag/v2.0.0) to the resource group. The template includes a parameter file in which you can configure certain aspects of the resource deployment. The script verifies the provisioning state of the deployment. The deployed resources are shown in the image below:
+- The script will deploy the included [Azure resource template](https://github.com/cupo365/aad-app-registration-credential-checker/releases/tag/v2.1.0) to the resource group. The template includes a parameter file in which you can configure certain aspects of the resource deployment. The script verifies the provisioning state of the deployment. The deployed resources are shown in the image below:
 ![Azure Resources diagram](resources/azure-diagram.png)
 - The script will assign the required permissions to the system assigned managed identity created for the Logic App. The minimum required permissions are:
   - User.Read.All (Graph, Application)
@@ -97,4 +97,4 @@ The script contains error handling.
 
 <img src="resources/aad-app-reg-credential-checker-icon-big.svg" alt="AAD App Reg Credential Checker icon" style="width:300px;"/>
 
-**[<img src="https://external-content.duckduckgo.com/iu/?u=https%3A%2F%2Fwww.iconsdb.com%2Ficons%2Fpreview%2Froyal-blue%2Fdata-transfer-download-xxl.png&f=1&nofb=1" alt="Download the solution here!" style="width:15px;margin-right:10px;"/>__Download the solution here!__](https://github.com/cupo365/aad-app-registration-credential-checker/releases/tag/v2.0.0)**
+**[<img src="https://external-content.duckduckgo.com/iu/?u=https%3A%2F%2Fwww.iconsdb.com%2Ficons%2Fpreview%2Froyal-blue%2Fdata-transfer-download-xxl.png&f=1&nofb=1" alt="Download the solution here!" style="width:15px;margin-right:10px;"/>__Download the solution here!__](https://github.com/cupo365/aad-app-registration-credential-checker/releases/tag/v2.1.0)**
